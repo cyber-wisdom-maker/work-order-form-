@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Work Order Form</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f3f4f6;
+      padding: 20px;
+      color: #333;
+    }
+
+    .form-container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #2563eb;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 1rem;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      width: 100%;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f9fafb;
+    }
+
+    .download-btn {
+      background-color: #10b981;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .download-btn:hover {
+      background-color: #059669;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    <h1>Submit Work Order</h1>
+    <form id="workOrderForm" onsubmit="generateReferenceNumber(event)">
+      <label for="quantity">Quantity:</label>
+      <input type="number" id="quantity" required />
+
+      <label for="description">Description:</label>
+      <textarea id="description" required></textarea>
+
+      <label for="department">Department:</label>
+      <select id="department" required>
+        <option value="accounts">Accounts</option>
+        <option value="admin">Admin</option>
+        <option value="technical_service">Technical/Service</option>
+      </select>
+
+      <label for="workLocation">Work Location:</label>
+      <input type="text" id="workLocation" required />
+
+      <button type="submit">Submit</button>
+    </form>
+
+    <h2>Submitted Work Orders</h2>
+    <table id="responseTable" style="display: none;">
+      <thead>
+        <tr>
+          <th>Reference Number</th>
+          <th>Quantity</th>
+          <th>Description</th>
+          <th>Department</th>
+          <th>Work Location</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button id="downloadAllButton" onclick="downloadAllResponses()" style="display: none;">Download All Responses as CSV</button>
+  </div>
+
+  <script>
+    function generateReferenceNumber(event) {
+      event.preventDefault();
+
+      const quantity = document.getElementById('quantity').value;
+      const description = document.getElementById('description').value;
+      const department = document.getElementById('department').value;
+      const workLocation = document.getElementById('workLocation').value;
+
+      let prefix = '';
+      if (department === 'accounts') prefix = 'ACC/2412/';
+      if (department === 'admin') prefix = 'ADMIN/2412/';
+      if (department === 'technical_service') prefix = 'TEC/2412/';
+
+      const uniqueID = Date.now().toString().slice(-4);
+      const ref = prefix + uniqueID;
+
+      const table = document.getElementById('responseTable').getElementsByTagName('tbody')[0];
+      const newRow = table.insertRow();
+
+      newRow.insertCell(0).innerText = ref;
+      newRow.insertCell(1).innerText = quantity;
+      newRow.insertCell(2).innerText = description;
+      newRow.insertCell(3).innerText = department.replace('_', '/');
+      newRow.insertCell(4).innerText = workLocation;
+
+      const actionCell = newRow.insertCell(5);
+      const btn = document.createElement('button');
+      btn.innerText = 'Download';
+      btn.className = 'download-btn';
+      btn.onclick = function () {
+        downloadIndividualResponse(newRow);
+      };
+      actionCell.appendChild(btn);
+
+      document.getElementById('responseTable').style.display = 'table';
+      document.getElementById('downloadAllButton').style.display = 'block';
+
+      document.getElementById('workOrderForm').reset();
+    }
+
+    function downloadAllResponses() {
+      const table = document.getElementById('responseTable');
+      let csv = "Reference Number,Quantity,Description,Department,Work Location\n";
+
+      for (let i = 1; i < table.rows.length; i++) {
+        const cells = table.rows[i].cells;
+        const row = [];
+        for (let j = 0; j < 5; j++) {
+          row.push(cells[j].innerText);
+        }
+        csv += row.join(",") + "\n";
+      }
+
+      const link = document.createElement("a");
+      link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      link.download = "all_responses.csv";
+      link.click();
+    }
+
+    function downloadIndividualResponse(row) {
+      const cells = row.cells;
+      let csv = "Reference Number,Quantity,Description,Department,Work Location\n";
+      const rowData = [];
+
+      for (let i = 0; i < 5; i++) {
+        rowData.push(cells[i].innerText);
+      }
+      csv += rowData.join(",") + "\n";
+
+      const link = document.createElement("a");
+      link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      link.download = rowData[0] + "_response.csv";
+      link.click();
+    }
+  </script>
+</body>
+</html>
